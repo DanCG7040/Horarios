@@ -1,0 +1,56 @@
+<!-- Created with Jaspersoft Studio version 7.0.0.final using JasperReports Library version 7.0.0-b478feaa9aab4375eba71de77b4ca138ad2f62aa  -->
+<jasperReport name="test" language="java" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="464626bc-5bd3-4942-97da-872966b08e21">
+	<query language="sql"><![CDATA[]]></query>
+	<field name="nombre" class="java.lang.String"/>
+	<field name="horasTrabajadas" class="java.lang.Integer"/>
+	<field name="fechaInicio" class="java.lang.String"/>
+	<field name="fechaFin" class="java.lang.String"/>
+	<field name="observacionDiaInicio" class="java.lang.String"/>
+	<variable name="Variable_1" class="java.lang.String"/>
+	<background splitType="Stretch"/>
+	<title height="79" splitType="Stretch">
+		<element kind="textField" uuid="8fc5320d-db3b-4261-9c3d-cd493bf07a64" x="40" y="0" width="100" height="18" pattern="MMMMM dd, yyyy">
+			<expression><![CDATA[new java.util.Date()]]></expression>
+		</element>
+		<element kind="staticText" uuid="3e5fe497-3047-4545-a104-e6b84e442297" x="10" y="0" width="30" height="18">
+			<text><![CDATA[Fecha]]></text>
+		</element>
+		<element kind="staticText" uuid="844fd547-56a6-49d5-bce2-7a85def32cf5" x="210" y="20" width="160" height="30" fontSize="20.0">
+			<text><![CDATA[Informes horarios]]></text>
+		</element>
+		<element kind="image" uuid="4ed12d76-dc0b-4438-ac6e-4ab52a98df0f" x="450" y="10" width="69" height="60">
+			<expression><![CDATA["C:/Users/danie/OneDrive/Escritorio/archivos daniel/Logo Comité Cafeteros Tolima versión Vertical-01 (1).png"]]></expression>
+		</element>
+	</title>
+	<pageHeader height="60" splitType="Stretch">
+		<element kind="staticText" uuid="c354afc5-3399-4bd1-94bf-0dd1eda56ac5" x="330" y="30" width="90" height="30">
+			<text><![CDATA[Nombre]]></text>
+		</element>
+		<element kind="staticText" uuid="9eeea313-c3cf-4d9b-9d5c-0068d398a731" x="450" y="30" width="100" height="30">
+			<text><![CDATA[horasTrabajadas]]></text>
+		</element>
+		<element kind="staticText" uuid="9e91a5ca-f72d-4a25-9f46-6475d8d72793" x="0" y="30" width="80" height="30">
+			<text><![CDATA[fechaInicio]]></text>
+		</element>
+		<element kind="staticText" uuid="bfca397e-98e2-46da-a5c0-c852b08825c0" x="150" y="30" width="100" height="30">
+			<text><![CDATA[fechaFin]]></text>
+		</element>
+	</pageHeader>
+	<columnHeader height="42" splitType="Stretch"/>
+	<detail>
+		<band height="97" splitType="Stretch">
+			<element kind="textField" uuid="95a84331-398c-41fb-9287-dfc0dd6767bd" x="330" y="0" width="90" height="30">
+				<expression><![CDATA[$F{nombre}]]></expression>
+			</element>
+			<element kind="textField" uuid="178e7ad7-7f06-4780-82f6-93c537151bf5" x="440" y="0" width="110" height="30">
+				<expression><![CDATA[$F{horasTrabajadas}]]></expression>
+			</element>
+			<element kind="textField" uuid="ff3d8a53-948b-4339-b64a-96f24316075b" x="-10" y="0" width="100" height="30">
+				<expression><![CDATA[$F{fechaInicio}]]></expression>
+			</element>
+			<element kind="textField" uuid="787ee9eb-ea87-4340-a19a-6420053cdfbe" x="140" y="0" width="110" height="30">
+				<expression><![CDATA[$F{fechaFin}]]></expression>
+			</element>
+		</band>
+	</detail>
+</jasperReport>
