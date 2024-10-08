@@ -9,10 +9,10 @@
 	<variable name="Variable_1" class="java.lang.String"/>
 	<background splitType="Stretch"/>
 	<title height="79" splitType="Stretch">
-		<element kind="textField" uuid="8fc5320d-db3b-4261-9c3d-cd493bf07a64" x="40" y="0" width="100" height="18" pattern="MMMMM dd, yyyy">
+		<element kind="textField" uuid="8fc5320d-db3b-4261-9c3d-cd493bf07a64" x="50" y="0" width="140" height="18" pattern="MMMMM dd, yyyy">
 			<expression><![CDATA[new java.util.Date()]]></expression>
 		</element>
-		<element kind="staticText" uuid="3e5fe497-3047-4545-a104-e6b84e442297" x="10" y="0" width="30" height="18">
+		<element kind="staticText" uuid="3e5fe497-3047-4545-a104-e6b84e442297" x="10" y="0" width="40" height="18">
 			<text><![CDATA[Fecha]]></text>
 		</element>
 		<element kind="staticText" uuid="844fd547-56a6-49d5-bce2-7a85def32cf5" x="210" y="20" width="160" height="30" fontSize="20.0">
