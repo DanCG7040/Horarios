@@ -8,18 +8,14 @@ import Reportes.ReporteObservacion;
 import Reportes.ReporteTrabajador;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
@@ -30,6 +26,34 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import net.sf.jasperreports.view.JasperViewer;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Image;
+import com.itextpdf.io.image.ImageDataFactory;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.List;
+import com.itextpdf.io.image.ImageDataFactory;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.element.Image;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.property.UnitValue;
+import com.itextpdf.layout.property.TextAlignment;
+
+import javax.swing.JOptionPane;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Date;
+import java.util.List;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
+import java.util.Locale;
+
 
 /**
  *
@@ -47,9 +71,12 @@ private JComboBox<String> comboBoxTrabajadores;
         jPanelSeptiembre.setVisible(false);
         jPanelOctubre.setVisible(false);
         jPanelNoviembre.setVisible(false);
+        jPanelDiciembre.setVisible(false);
         cargarDatosDesdeArchivo(jTableSeptiembre, "tablaHorariosSeptiembre.txt");
         cargarDatosDesdeArchivo(jTableOctubre, "tablaHorariosOctubre.txt");
         cargarDatosDesdeArchivo(jTableNoviembre, "tablaHorariosNoviembre.txt");
+         cargarDatosDesdeArchivo(jTableDiciembre, "tablaHorariosDiciembre.txt");
+        
        
        
         
@@ -139,7 +166,9 @@ private List<ReporteTrabajador> generarReporteHorasTrabajadores() {
         tablaActiva = jTableOctubre;
     } else if (jPanelNoviembre.isVisible()) {
         tablaActiva = jTableNoviembre;
-    }
+    } else if (jPanelDiciembre.isVisible()) {
+        tablaActiva = jTableDiciembre;
+    } 
 
     if (tablaActiva != null) {
         DefaultTableModel modeloTabla = (DefaultTableModel) tablaActiva.getModel();
@@ -222,7 +251,9 @@ private List<ReporteObservacion> generarReporteObservaciones() {
         tablaActiva = jTableOctubre;
     } else if (jPanelNoviembre.isVisible()) {
         tablaActiva = jTableNoviembre;
-    }
+    } else if (jPanelDiciembre.isVisible()) {
+        tablaActiva = jTableDiciembre;
+    } 
 
     if (tablaActiva != null) {
         DefaultTableModel modeloTabla = (DefaultTableModel) tablaActiva.getModel();
@@ -242,6 +273,76 @@ private List<ReporteObservacion> generarReporteObservaciones() {
     return reporteObservaciones;
 }
 
+
+
+private void guardarReporteObservaciones() {
+    List<ReporteObservacion> datosReporteObservaciones = generarReporteObservaciones();
+
+    String fechaActual = LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+    String pathArchivoObservaciones = "reportes/reporte_observaciones_" + fechaActual + ".pdf";
+
+    // Asegurarse de que el directorio exista
+    File directorio = new File("reportes");
+    if (!directorio.exists()) {
+        directorio.mkdirs(); // Crear la carpeta si no existe
+    }
+
+    // Crear documento PDF
+    try {
+        PdfWriter writer = new PdfWriter(pathArchivoObservaciones);
+        PdfDocument pdf = new PdfDocument(writer);
+        Document document = new Document(pdf);
+
+        // Agregar imagen en la esquina superior derecha
+        String imagePath = "src/img/logoComite.png"; // Cambia esto por la ruta de tu imagen
+        Image img = new Image(ImageDataFactory.create(imagePath));
+        img.scaleToFit(100, 100); // Cambia el tamaño de la imagen si es necesario
+        img.setFixedPosition(pdf.getDefaultPageSize().getWidth() - 110, pdf.getDefaultPageSize().getHeight() - 110); // Posiciona la imagen en la esquina superior derecha
+        document.add(img);
+
+        // Agregar espacio antes de los datos
+        document.add(new Paragraph(" ")); // Agregar un párrafo vacío para espacio
+
+        // Título del reporte
+        document.add(new Paragraph("Reporte de Observaciones")
+                .setFontSize(20)
+                .setBold()
+                .setTextAlignment(TextAlignment.CENTER));
+        document.add(new Paragraph("Fecha: " + fechaActual)
+                .setTextAlignment(TextAlignment.CENTER));
+        document.add(new Paragraph(" ")); // Espacio en blanco
+
+        // Crear tabla para los datos
+        Table table = new Table(3); // Cuadro con 3 columnas: Nombre, Observación, Fecha
+        table.setWidth(UnitValue.createPercentValue(100)); // Ajustar al ancho del documento
+        table.setMarginTop(20); // Margen superior del cuadro
+        table.setPadding(10); // Relleno interno del cuadro
+
+        // Agregar encabezados a la tabla
+     
+        table.addHeaderCell(new Cell().add(new Paragraph("Observación").setBold()).setTextAlignment(TextAlignment.CENTER));
+        table.addHeaderCell(new Cell().add(new Paragraph("Fecha de Observación").setBold()).setTextAlignment(TextAlignment.CENTER));
+
+        // Agregar contenido a la tabla
+        for (ReporteObservacion observacion : datosReporteObservaciones) {
+
+            table.addCell(new Cell().add(new Paragraph(observacion.getObservaciones())).setTextAlignment(TextAlignment.CENTER));
+            table.addCell(new Cell().add(new Paragraph(observacion.getFechaInicio())).setTextAlignment(TextAlignment.CENTER));
+        }
+
+        // Agregar la tabla al documento
+        document.add(table);
+
+        document.close(); // Cerrar el documento
+        JOptionPane.showMessageDialog(this, "Reporte de observaciones guardado como PDF en: " + pathArchivoObservaciones);
+    } catch (FileNotFoundException e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(this, "Error al generar el reporte de observaciones: " + e.getMessage());
+    } catch (IOException e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(this, "Error al cargar la imagen: " + e.getMessage());
+    }
+}
 
 
 
@@ -279,6 +380,81 @@ private List<ReporteObservacion> generarReporteObservaciones() {
     }
 }
 
+private void guardarReporteHorasTrabajadores() {
+    List<ReporteTrabajador> datosReporte = generarReporteHorasTrabajadores();
+
+    // Obtener el nombre del mes actual en español
+      String fechaActual = LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+    String pathArchivo = "reportes/reporte_trabajadores_" + fechaActual + ".pdf";
+
+    // Asegurarse de que el directorio exista
+    File directorio = new File("reportes");
+    if (!directorio.exists()) {
+        directorio.mkdirs(); // Crear la carpeta si no existe
+    }
+
+    try {
+        // Crear PDF y documento
+        PdfWriter writer = new PdfWriter(pathArchivo);
+        PdfDocument pdf = new PdfDocument(writer);
+        Document document = new Document(pdf);
+
+        // Ruta de la imagen
+        String imagePath = "img/logoComite.png"; // Ajusta la ruta según tu proyecto
+        Image img = new Image(ImageDataFactory.create(imagePath));
+
+        // Escalar y posicionar la imagen
+        img.scaleToFit(100, 100);  // Escalar a 100x100
+        img.setFixedPosition(pdf.getDefaultPageSize().getWidth() - 110, pdf.getDefaultPageSize().getHeight() - 110); // Posicionar en esquina superior derecha
+        document.add(img);
+
+        // Agregar un espacio antes de los datos
+        document.add(new Paragraph(" "));
+
+        // Título del reporte
+        document.add(new Paragraph("Reporte de Horas Trabajadores")
+                .setFontSize(20)
+                .setBold()
+                .setTextAlignment(TextAlignment.CENTER));
+        document.add(new Paragraph("Fecha: " + new Date().toString())
+                .setTextAlignment(TextAlignment.CENTER));
+        document.add(new Paragraph(" ")); // Espacio en blanco
+
+        // Crear tabla para los datos
+        Table table = new Table(4); // Cuadro con 4 columnas
+        table.setWidth(UnitValue.createPercentValue(100)); // Ajustar al ancho del documento
+        table.setMarginTop(20); // Margen superior del cuadro
+
+        // Agregar encabezados a la tabla
+        table.addHeaderCell(new Cell().add(new Paragraph("Nombre").setBold()).setTextAlignment(TextAlignment.CENTER));
+        table.addHeaderCell(new Cell().add(new Paragraph("Horas Trabajadas").setBold()).setTextAlignment(TextAlignment.CENTER));
+        table.addHeaderCell(new Cell().add(new Paragraph("Fecha de Inicio").setBold()).setTextAlignment(TextAlignment.CENTER));
+        table.addHeaderCell(new Cell().add(new Paragraph("Fecha de Fin").setBold()).setTextAlignment(TextAlignment.CENTER));
+
+        // Agregar contenido a la tabla
+        for (ReporteTrabajador reporte : datosReporte) {
+            table.addCell(new Cell().add(new Paragraph(reporte.getNombre())));
+            table.addCell(new Cell().add(new Paragraph(String.valueOf(reporte.getHorasTrabajadas()))));
+            table.addCell(new Cell().add(new Paragraph(reporte.getFechaInicio())));
+            table.addCell(new Cell().add(new Paragraph(reporte.getFechaFin())));
+        }
+
+        // Agregar la tabla al documento
+        document.add(table);
+
+        document.close(); // Cerrar el documento
+        JOptionPane.showMessageDialog(this, "Reporte guardado como PDF en: " + pathArchivo);
+    } catch (FileNotFoundException e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(this, "Error al generar el reporte: " + e.getMessage());
+    } catch (Exception e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+    }
+}
+
+
+
 private void mostrarReporteObservaciones() {
     List<ReporteObservacion> datosReporteObservaciones = generarReporteObservaciones();
 
@@ -307,6 +483,8 @@ private void mostrarReporteObservaciones() {
 
 
 
+
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -321,9 +499,7 @@ private void mostrarReporteObservaciones() {
         jRadioSeptiembre = new javax.swing.JRadioButton();
         jRadiooctubre = new javax.swing.JRadioButton();
         jRadionoviembre = new javax.swing.JRadioButton();
-        jPanelNoviembre = new javax.swing.JPanel();
-        jScrollPane3 = new javax.swing.JScrollPane();
-        jTableNoviembre = new javax.swing.JTable();
+        jRadioDiciembre = new javax.swing.JRadioButton();
         jPanelSeptiembre = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTableSeptiembre = new javax.swing.JTable();
@@ -331,6 +507,12 @@ private void mostrarReporteObservaciones() {
         jPanelOctubre = new javax.swing.JPanel();
         jScrollPane2 = new javax.swing.JScrollPane();
         jTableOctubre = new javax.swing.JTable();
+        jPanelNoviembre = new javax.swing.JPanel();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        jTableNoviembre = new javax.swing.JTable();
+        jPanelDiciembre = new javax.swing.JPanel();
+        jScrollPane4 = new javax.swing.JScrollPane();
+        jTableDiciembre = new javax.swing.JTable();
         jPanel3 = new javax.swing.JPanel();
         Guardar = new javax.swing.JButton();
         Trabajador = new javax.swing.JComboBox<>();
@@ -368,6 +550,13 @@ private void mostrarReporteObservaciones() {
             }
         });
 
+        jRadioDiciembre.setText("Diciembre");
+        jRadioDiciembre.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jRadioDiciembreActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -375,53 +564,30 @@ private void mostrarReporteObservaciones() {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGap(14, 14, 14)
                 .addComponent(jLabel1)
-                .addGap(94, 94, 94)
+                .addGap(64, 64, 64)
                 .addComponent(jRadioSeptiembre, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(84, 84, 84)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jRadiooctubre, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(73, 73, 73)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jRadionoviembre, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(799, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jRadioDiciembre, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap(21, Short.MAX_VALUE)
+                .addComponent(jLabel1)
+                .addGap(15, 15, 15))
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(15, 15, 15)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1)
                     .addComponent(jRadioSeptiembre)
                     .addComponent(jRadiooctubre)
-                    .addComponent(jRadionoviembre))
-                .addGap(14, 14, 14))
-        );
-
-        jTableNoviembre.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null}
-            },
-            new String [] {
-                "Fecha", "7:00 A.M. A 12:00 P.M ", "7:00 A.M. A 12:00 P.M - 1:00 P.M. A 5:00 P.M", "7:00 A.M. A 12:00 P.M - 1:00 P.M. A 4:00 P.M", "1:00 P.M. A 9:00 P.M", " DOMINGO 1:00 P.M. - 8:00 P.M..", "OBSERVACIONES"
-            }
-        ));
-        jScrollPane3.setViewportView(jTableNoviembre);
-
-        javax.swing.GroupLayout jPanelNoviembreLayout = new javax.swing.GroupLayout(jPanelNoviembre);
-        jPanelNoviembre.setLayout(jPanelNoviembreLayout);
-        jPanelNoviembreLayout.setHorizontalGroup(
-            jPanelNoviembreLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanelNoviembreLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 1383, Short.MAX_VALUE)
-                .addContainerGap())
-        );
-        jPanelNoviembreLayout.setVerticalGroup(
-            jPanelNoviembreLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanelNoviembreLayout.createSequentialGroup()
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 463, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, Short.MAX_VALUE))
+                    .addComponent(jRadionoviembre)
+                    .addComponent(jRadioDiciembre))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jTableSeptiembre.setModel(new javax.swing.table.DefaultTableModel(
@@ -458,7 +624,7 @@ private void mostrarReporteObservaciones() {
                     .addComponent(jScrollPane1)
                     .addGroup(jPanelSeptiembreLayout.createSequentialGroup()
                         .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 1307, Short.MAX_VALUE)))
+                        .addGap(0, 1313, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jPanelSeptiembreLayout.setVerticalGroup(
@@ -489,14 +655,72 @@ private void mostrarReporteObservaciones() {
             jPanelOctubreLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanelOctubreLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 1395, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 1401, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanelOctubreLayout.setVerticalGroup(
             jPanelOctubreLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanelOctubreLayout.createSequentialGroup()
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(39, Short.MAX_VALUE))
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 427, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 39, Short.MAX_VALUE))
+        );
+
+        jTableNoviembre.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null}
+            },
+            new String [] {
+                "Fecha", "7:00 A.M. A 12:00 P.M ", "7:00 A.M. A 12:00 P.M - 1:00 P.M. A 5:00 P.M", "7:00 A.M. A 12:00 P.M - 1:00 P.M. A 4:00 P.M", "1:00 P.M. A 9:00 P.M", " DOMINGO 1:00 P.M. - 8:00 P.M..", "OBSERVACIONES"
+            }
+        ));
+        jScrollPane3.setViewportView(jTableNoviembre);
+
+        javax.swing.GroupLayout jPanelNoviembreLayout = new javax.swing.GroupLayout(jPanelNoviembre);
+        jPanelNoviembre.setLayout(jPanelNoviembreLayout);
+        jPanelNoviembreLayout.setHorizontalGroup(
+            jPanelNoviembreLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelNoviembreLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 1389, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        jPanelNoviembreLayout.setVerticalGroup(
+            jPanelNoviembreLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelNoviembreLayout.createSequentialGroup()
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 463, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 12, Short.MAX_VALUE))
+        );
+
+        jTableDiciembre.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null}
+            },
+            new String [] {
+                "Fecha", "7:00 A.M. A 12:00 P.M ", "7:00 A.M. A 12:00 P.M - 1:00 P.M. A 5:00 P.M", "7:00 A.M. A 12:00 P.M - 1:00 P.M. A 4:00 P.M", "1:00 P.M. A 9:00 P.M", " DOMINGO 1:00 P.M. - 8:00 P.M..", "OBSERVACIONES"
+            }
+        ));
+        jScrollPane4.setViewportView(jTableDiciembre);
+
+        javax.swing.GroupLayout jPanelDiciembreLayout = new javax.swing.GroupLayout(jPanelDiciembre);
+        jPanelDiciembre.setLayout(jPanelDiciembreLayout);
+        jPanelDiciembreLayout.setHorizontalGroup(
+            jPanelDiciembreLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelDiciembreLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 1377, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        jPanelDiciembreLayout.setVerticalGroup(
+            jPanelDiciembreLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelDiciembreLayout.createSequentialGroup()
+                .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 249, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 94, Short.MAX_VALUE))
         );
 
         Guardar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Img/icons8-guardar-48.png"))); // NOI18N
@@ -612,6 +836,11 @@ private void mostrarReporteObservaciones() {
                     .addGap(18, 18, 18)
                     .addComponent(jPanelNoviembre, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGap(18, 18, 18)))
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createSequentialGroup()
+                    .addGap(24, 24, 24)
+                    .addComponent(jPanelDiciembre, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGap(24, 24, 24)))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -625,12 +854,17 @@ private void mostrarReporteObservaciones() {
                 .addGroup(layout.createSequentialGroup()
                     .addGap(43, 43, 43)
                     .addComponent(jPanelOctubre, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(318, Short.MAX_VALUE)))
+                    .addContainerGap(336, Short.MAX_VALUE)))
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup()
                     .addGap(49, 49, 49)
                     .addComponent(jPanelNoviembre, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(315, Short.MAX_VALUE)))
+                    .addContainerGap(321, Short.MAX_VALUE)))
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createSequentialGroup()
+                    .addGap(182, 182, 182)
+                    .addComponent(jPanelDiciembre, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap(320, Short.MAX_VALUE)))
         );
 
         pack();
@@ -639,7 +873,9 @@ private void mostrarReporteObservaciones() {
     private void jRadioSeptiembreActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioSeptiembreActionPerformed
          jPanelSeptiembre.setVisible(true);
         jPanelOctubre.setVisible(false);
-        jPanelNoviembre.setVisible(false); // Al seleccionar Septiembre, solo mostrar el panel de Septiembr
+        jPanelNoviembre.setVisible(false);
+        jPanelDiciembre.setVisible(false); 
+
            cargarDiasEnTabla("diastrabajo.txt", jTableSeptiembre);
           cargarDatosDesdeArchivo(jTableSeptiembre, "tablaHorariosSeptiembre.txt");
           
@@ -653,6 +889,7 @@ private void mostrarReporteObservaciones() {
         jPanelSeptiembre.setVisible(false);
         jPanelOctubre.setVisible(true);
         jPanelNoviembre.setVisible(false); 
+        jPanelDiciembre.setVisible(false); 
         cargarTrabajadoresEnComboBox(); // Llama a este método
          cargarDiasEnTabla("diastrabajooctubre.txt", jTableOctubre);
         cargarDatosDesdeArchivo(jTableOctubre, "tablaHorariosOctubre.txt");
@@ -664,6 +901,7 @@ private void mostrarReporteObservaciones() {
          jPanelNoviembre.setVisible(true);
         jPanelSeptiembre.setVisible(false);
         jPanelOctubre.setVisible(false);
+        jPanelDiciembre.setVisible(false); 
        
         
           cargarDiasEnTabla("diastrabajonoviembre.txt", jTableNoviembre);
@@ -766,7 +1004,7 @@ private void guardarCambiosEnArchivo(JTable tabla, String nombreArchivo) {
 
 
     private void GuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_GuardarActionPerformed
-        // Determinar cuál tabla está activa (visible)
+     // Determinar cuál tabla está activa (visible)
     JTable tablaActiva = null;
     String nombreArchivo = "";
 
@@ -779,6 +1017,9 @@ private void guardarCambiosEnArchivo(JTable tabla, String nombreArchivo) {
     } else if (jPanelNoviembre.isVisible()) {
         tablaActiva = jTableNoviembre; // Tabla de noviembre
         nombreArchivo = "tablaHorariosNoviembre.txt";
+    } else if (jPanelDiciembre.isVisible()) { // Agregar esta condición para diciembre
+        tablaActiva = jTableDiciembre; // Tabla de diciembre
+        nombreArchivo = "tablaHorariosDiciembre.txt"; // Nombre del archivo para diciembre
     }
 
     // Guardar la tabla activa en el archivo correspondiente
@@ -820,7 +1061,9 @@ private void guardarCambiosEnArchivo(JTable tabla, String nombreArchivo) {
     }//GEN-LAST:event_GuardarActionPerformed
 
     private void informeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_informeActionPerformed
-mostrarReporte();
+
+        guardarReporteHorasTrabajadores();
+
     }//GEN-LAST:event_informeActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
@@ -828,7 +1071,9 @@ mostrarReporte();
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void informe1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_informe1ActionPerformed
-mostrarReporteObservaciones();        // TODO add your handling code here:
+
+        guardarReporteObservaciones();    // TODO add your handling code here:
+
     }//GEN-LAST:event_informe1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
@@ -844,7 +1089,9 @@ mostrarReporteObservaciones();        // TODO add your handling code here:
         tablaActiva = jTableOctubre; // Tabla de octubre
     } else if (jPanelNoviembre.isVisible()) {
         tablaActiva = jTableNoviembre; // Tabla de noviembre
-    }
+    } else if (jPanelDiciembre.isVisible()) {
+        tablaActiva = jTableDiciembre;
+    } 
 
     // Obtener la fila seleccionada de la tabla activa
     if (tablaActiva != null) {
@@ -896,6 +1143,20 @@ mostrarReporteObservaciones();        // TODO add your handling code here:
 
 
     }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jRadioDiciembreActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioDiciembreActionPerformed
+             jPanelDiciembre.setVisible(true);
+        jPanelSeptiembre.setVisible(false);
+        jPanelOctubre.setVisible(false);
+        jPanelNoviembre.setVisible(false);
+       
+        
+          cargarDiasEnTabla("diastrabajodiciembre.txt", jTableSeptiembre);
+         cargarDatosDesdeArchivo(jTableNoviembre, "tablaHorariosDiciembre.txt");
+         cargarTrabajadoresEnComboBox(); // Llama a este método
+      
+        
+    }//GEN-LAST:event_jRadioDiciembreActionPerformed
 private void abrirMenuPrincipal() {
     // Crear el JFrame para el menú principal usando InterfazMenu
     InterfazMenu menuPrincipal = new InterfazMenu();
@@ -927,9 +1188,11 @@ private void abrirMenuPrincipal() {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanelDiciembre;
     private javax.swing.JPanel jPanelNoviembre;
     private javax.swing.JPanel jPanelOctubre;
     private javax.swing.JPanel jPanelSeptiembre;
+    private javax.swing.JRadioButton jRadioDiciembre;
     private javax.swing.JRadioButton jRadioSeptiembre;
     private javax.swing.JRadioButton jRadionoviembre;
     private javax.swing.JRadioButton jRadiooctubre;
@@ -937,6 +1200,8 @@ private void abrirMenuPrincipal() {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
+    private javax.swing.JScrollPane jScrollPane4;
+    private javax.swing.JTable jTableDiciembre;
     private javax.swing.JTable jTableNoviembre;
     private javax.swing.JTable jTableOctubre;
     private javax.swing.JTable jTableSeptiembre;
